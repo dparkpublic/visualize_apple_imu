@@ -170,57 +170,6 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         self.multipeerSession.sendToAllPeers(data)
     }
     
-    private func createFiles() -> Bool {
-        // initialize file handlers
-        self.fileHandlers.removeAll()
-
-        // create result text files
-        let startHeader = ""
-        for i in 0...(self.numTextFiles - 1) {
-            var url = URL(fileURLWithPath: NSTemporaryDirectory())
-            url.appendPathComponent(fileNames[i])
-            self.fileURLs.append(url)
-            
-            // delete previous text files
-            if (FileManager.default.fileExists(atPath: url.path)) {
-                do {
-                    try FileManager.default.removeItem(at: url)
-                } catch {
-                    os_log("cannot remove previous file", log:.default, type:.error)
-                    return false
-                }
-            }
-            
-            // create new text files
-            if (!FileManager.default.createFile(atPath: url.path, contents: startHeader.data(using: String.Encoding.utf8), attributes: nil)) {
-                self.errorMsg(msg: "cannot create file \(self.fileNames[i])")
-                return false
-            }
-            
-            // assign new file handlers
-            let fileHandle: FileHandle? = FileHandle(forWritingAtPath: url.path)
-            if let handle = fileHandle {
-                self.fileHandlers.append(handle)
-            } else {
-                return false
-            }
-        }
-
-        // write current recording time information
-        let timeHeader = "# Created at \(timeToString()) in Burnaby Canada \n"
-        for i in 0...(self.numTextFiles - 1) {
-            if let timeHeaderToWrite = timeHeader.data(using: .utf8) {
-                self.fileHandlers[i].write(timeHeaderToWrite)
-            } else {
-                os_log("Failed to write data record", log: OSLog.default, type: .fault)
-                return false
-            }
-        }
-
-        // return true if everything is alright
-        return true
-    }
-
     /// - Tag: GetWorldMap
     @IBAction func shareSession(_ button: UIButton) {
         sceneView.session.getCurrentWorldMap { worldMap, error in
@@ -230,6 +179,10 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
                 else { fatalError("can't encode map") }
 
             // self.multipeerSession.sendToAllPeers(data)
+            var url = URL(fileURLWithPath: NSTemporaryDirectory())
+            url.appendPathComponent("trajectory")
+            let fileHandle: FileHandle? = FileHandle(forWritingAtPath: url.path)
+            fileHandle.write(data)
         }
     }
     
